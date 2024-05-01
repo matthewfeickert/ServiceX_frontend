@@ -44,5 +44,5 @@ except FileNotFoundError:
     sys.exit(1)
 
 
-spec = ServiceXSpec.parse_obj(data)
+spec = ServiceXSpec.model_validate(data)
 print(deliver(spec))
