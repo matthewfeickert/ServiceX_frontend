@@ -116,7 +116,9 @@ class Definition(BaseModel):
 class ServiceXSpec(BaseModel):
     General: General
     Sample: List[Sample]
-    Definition: Optional[Definition] = None
+    # can't name field same as model
+    # c.f. https://github.com/pydantic/pydantic/issues/7871#issuecomment-1770958931
+    definition: Optional[Definition] = None
 
     # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
     # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
