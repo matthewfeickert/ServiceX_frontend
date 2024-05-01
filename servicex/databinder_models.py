@@ -60,6 +60,7 @@ class Sample(BaseModel):
         :param values:
         :return:
         """
+        values = dict(values)
         if values['XRootDFiles'] and values['RucioDID']:
             raise ValueError("Only specify one of XRootDFiles or RucioDID, not both.")
         if not values['XRootDFiles'] and not values['RucioDID']:
@@ -158,13 +159,13 @@ class ServiceXSpec(BaseModel):
             return value
 
         if 'Definition' in values and values['Definition'] is not None:
-            defs = values['Definition'].dict()
+            defs = dict(values['Definition'])
         else:
             defs = {}
 
         for sample_field in values['Sample']:
-            replace_value_from_def(sample_field.__dict__, defs)
+            replace_value_from_def(dict(sample_field), defs)
 
-        replace_value_from_def(values['General'].__dict__, defs)
+        replace_value_from_def(dict(values['General']), defs)
 
         return values
