@@ -53,7 +53,7 @@ class Sample(BaseModel):
         elif self.XRootDFiles:
             return FileListDataset(self.XRootDFiles)
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def validate_did_xor_file(cls, values):
         """
         Ensure that only one of RootFile or RucioDID is specified.
@@ -66,7 +66,7 @@ class Sample(BaseModel):
             raise ValueError("Must specify one of XRootDFiles or RucioDID.")
         return values
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def validate_function_xor_query(cls, values):
         """
         Ensure that only one of Function or Query is specified.
@@ -100,7 +100,7 @@ class General(BaseModel):
 class Definition(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def check_def_name(cls, values):
         """
         Ensure that the definition name is DEF_XXX format
@@ -128,7 +128,8 @@ class ServiceXSpec(BaseModel):
                     raise ValueError('"Tree" property is not allowed when codegen is not "uproot"')
         return v
 
-    @model_validator(skip_on_failure=True)
+    # @model_validator()
+    @root_validator(skip_on_failure=True)
     @classmethod
     def replace_definition(cls, values):
         """
