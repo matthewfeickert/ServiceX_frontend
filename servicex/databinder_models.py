@@ -27,7 +27,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from enum import Enum
 from typing import Union, Optional, Callable, List
-from pydantic import BaseModel, Field, model_validator, constr, validator
+from pydantic import BaseModel, Field, root_validator, constr, validator
 
 from servicex.dataset_identifier import RucioDatasetIdentifier, FileListDataset
 from servicex.func_adl import func_adl_dataset
@@ -54,7 +54,7 @@ class Sample(BaseModel):
         elif self.XRootDFiles:
             return FileListDataset(self.XRootDFiles)
 
-    @model_validator
+    @root_validator
     def validate_did_xor_file(cls, values):
         """
         Ensure that only one of RootFile or RucioDID is specified.
@@ -67,7 +67,7 @@ class Sample(BaseModel):
             raise ValueError("Must specify one of XRootDFiles or RucioDID.")
         return values
 
-    @model_validator
+    @root_validator
     def validate_function_xor_query(cls, values):
         """
         Ensure that only one of Function or Query is specified.
@@ -102,7 +102,7 @@ class Definition(BaseModel):
     class Config:
         extra = "allow"  # Allow additional fields not defined in the model
 
-    @model_validator
+    @root_validator
     def check_def_name(cls, values):
         """
         Ensure that the definition name is DEF_XXX format
@@ -128,7 +128,7 @@ class ServiceXSpec(BaseModel):
                     raise ValueError('"Tree" property is not allowed when codegen is not "uproot"')
         return v
 
-    @model_validator(pre=False, skip_on_failure=True)
+    @root_validator(pre=False, skip_on_failure=True)
     def replace_definition(cls, values):
         """
         Replace the definition name with the actual definition value looking
