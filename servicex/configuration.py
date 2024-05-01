@@ -30,7 +30,7 @@ import tempfile
 from pathlib import Path, PurePath
 from typing import List, Optional, Dict
 
-from pydantic import BaseModel, Field, validator
+from pydantic import ConfigDict, BaseModel, Field, validator
 
 import yaml
 
@@ -38,7 +38,7 @@ import yaml
 class Endpoint(BaseModel):
     endpoint: str
     name: str
-    token: Optional[str]
+    token: Optional[str] = None
 
 
 class Configuration(BaseModel):
@@ -47,6 +47,8 @@ class Configuration(BaseModel):
     cache_path: Optional[str] = Field(alias="cache-path", default=None)
     shortened_downloaded_filename: Optional[bool] = False
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("cache_path", always=True)
     def expand_cache_path(cls, v):
         """
@@ -76,9 +78,7 @@ class Configuration(BaseModel):
         p.mkdir(exist_ok=True, parents=True)
 
         return p.as_posix()
-
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     def endpoint_dict(self) -> Dict[str, Endpoint]:
         return {endpoint.name: endpoint for endpoint in self.api_endpoints}

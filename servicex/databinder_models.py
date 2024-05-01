@@ -27,25 +27,24 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from enum import Enum
 from typing import Union, Optional, Callable, List
-from pydantic import BaseModel, Field, root_validator, constr, validator
+from pydantic import model_validator, StringConstraints, ConfigDict, BaseModel, Field, root_validator, validator
 
 from servicex.dataset_identifier import RucioDatasetIdentifier, FileListDataset
 from servicex.func_adl import func_adl_dataset
+from typing_extensions import Annotated
 
 
 class Sample(BaseModel):
     Name: str
-    Codegen: Optional[str]
-    RucioDID: Optional[str]
-    XRootDFiles: Optional[Union[str, List[str]]]
+    Codegen: Optional[str] = None
+    RucioDID: Optional[str] = None
+    XRootDFiles: Optional[Union[str, List[str]]] = None
     NFiles: Optional[int] = Field(default=None)
     Function: Optional[Union[str, Callable]] = Field(default=None)
     Query: Optional[Union[str, func_adl_dataset.Query]] = Field(default=None)
     Tree: Optional[str] = Field(default=None)
     IgnoreLocalCache: bool = False
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     def dataset_identifier(self):
@@ -93,14 +92,13 @@ class General(BaseModel):
     ServiceX: str = Field(..., alias="ServiceX")
     Codegen: str
     OutputFormat: Union[OutputFormatEnum,
-        constr(regex='^(parquet|root-file)$')] = Field(default=OutputFormatEnum.root)  # NOQA F722
+        Annotated[str, StringConstraints(pattern='^(parquet|root-file)$')]] = Field(default=OutputFormatEnum.root)  # NOQA F722
 
-    Delivery: Union[DeliveryEnum, constr(regex='^(LocalCache|SignedURLs)$')] = Field(default=DeliveryEnum.LocalCache) # NOQA F722
+    Delivery: Union[DeliveryEnum, Annotated[str, StringConstraints(pattern='^(LocalCache|SignedURLs)$')]] = Field(default=DeliveryEnum.LocalCache) # NOQA F722
 
 
 class Definition(BaseModel):
-    class Config:
-        extra = "allow"  # Allow additional fields not defined in the model
+    model_config = ConfigDict(extra="allow")
 
     @root_validator
     def check_def_name(cls, values):
@@ -118,8 +116,10 @@ class Definition(BaseModel):
 class ServiceXSpec(BaseModel):
     General: General
     Sample: List[Sample]
-    Definition: Optional[Definition]
+    Definition: Optional[Definition] = None
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator('Sample')
     def check_tree_property(cls, v, values):
         if 'General' in values and values['General'].Codegen != 'uproot':
@@ -128,7 +128,8 @@ class ServiceXSpec(BaseModel):
                     raise ValueError('"Tree" property is not allowed when codegen is not "uproot"')
         return v
 
-    @root_validator(pre=False, skip_on_failure=True)
+    @model_validator(skip_on_failure=True)
+    @classmethod
     def replace_definition(cls, values):
         """
         Replace the definition name with the actual definition value looking
